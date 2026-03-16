@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Global Shipping Operations — Live Map</title>
+<style>
+:root {
+  --cream:     #F3EDE0;
+  --cream-2:   #EDE4D2;
+  --cream-3:   #E4D9C4;
+  --ocean:     #B6CAD8;
+  --ocean-2:   #A2BAC8;
+  --land:      #CCBA8E;
+  --land-2:    #BEA87A;
+  --land-bd:   #A89260;
+  --red:       #C41230;
+  --amber:     #C87C18;
+  --ink:       #1A1610;
+  --ink-2:     #4A4030;
+  --ink-3:     #7A6E5E;
+  --rule:      #C0A880;
+  --rule-lt:   #D8C8A4;
+  --panel:     rgba(243,237,224,0.96);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  background: var(--ocean);
+  font-family: Georgia, 'Times New Roman', serif;
+  color: var(--ink);
+  height: 100vh;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+#app { width:100vw; height:100vh; display:flex; flex-direction:column; }
+
+/* ── MASTHEAD ── */
+#header {
+  background: var(--cream);
+  flex-shrink: 0;
+  padding: 8px 18px 7px;
+  border-bottom: 1px solid var(--rule);
+  position: relative;
+  z-index: 80;
+}
+.hd-topline {
+  height: 2px;
+  background: var(--ink);
+  margin-bottom: 5px;
+}
+.hd-row1 {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.hd-pub {
+  font-size: 8.5px;
+  letter-spacing: .20em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+.hd-live {
+  font-size: 8.5px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: .12em;
+  color: var(--red);
+}
+.hd-live span { animation: blink 1.8s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+h1 {
+  font-size: 21px;
+  font-weight: normal;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin-bottom: 1px;
+}
+.hd-deck {
+  font-size: 10.5px;
+  color: var(--ink-2);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+.hd-metrics {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+.hd-metric {
+  display: flex;
+  flex-direction: column;
+  padding-right: 18px;
+  margin-right: 18px;
+  border-right: 1px solid var(--rule-lt);
+}
+.hd-metric:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+.hm-val {
+  font-size: 16px;
+  line-height: 1;
+  color: var(--ink);
+}
+.hm-val.r { color: var(--red); }
+.hm-val.a { color: var(--amber); }
+.hm-lbl {
+  font-size: 8px;
+  font-family: 'Courier New', monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
+.hd-btmrule {
+  height: 1px;
+  background: var(--rule-lt);
+  margin-top: 5px;
+}
+
+/* ── MAP AREA ── */
+#map-wrap { flex:1; position:relative; overflow:hidden; }
+#base-canvas, #anim-canvas {
+  position: absolute; top:0; left:0;
+  width:100%; height:100%;
+}
+#anim-canvas { pointer-events: none; }
+
+/* ── PANELS ── */
+.panel {
+  position: absolute;
+  background: var(--panel);
+  border: 0.5px solid var(--rule);
+  padding: 11px 13px;
+  z-index: 40;
+  min-width: 186px;
+  max-width: 196px;
+}
+.ptitle {
+  font-size: 7.5px;
+  letter-spacing: .20em;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+  color: var(--red);
+  border-bottom: 0.5px solid var(--rule-lt);
+  padding-bottom: 5px;
+  margin-bottom: 7px;
+}
+#lp { top:14px; left:14px; }
+#rp { top:14px; right:14px; }
+
+/* Route items */
+.ri {
+  display: flex; align-items: flex-start; gap: 7px;
+  margin-bottom: 7px; cursor: pointer; padding: 2px 0;
+  border-bottom: 0.5px solid var(--rule-lt);
+}
+.ri:last-child { border-bottom: none; margin-bottom: 0; }
+.ri-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; margin-top:3px; }
+.ri-body { flex:1; }
+.ri-name { font-size: 10px; line-height:1.2; color: var(--ink); }
+.ri-sub {
+  font-size: 8.5px; font-family:'Courier New',monospace;
+  color: var(--ink-3); margin-top:1px;
+}
+.ri:hover .ri-name { color: var(--red); }
+
+/* Env items */
+.ei {
+  display: flex; justify-content: space-between;
+  align-items: baseline; padding: 3px 0;
+  border-bottom: 0.5px solid var(--cream-2);
+}
+.ei:last-child { border-bottom: none; }
+.ei-lbl { font-size:8.5px; font-family:'Courier New',monospace; color:var(--ink-3); }
+.ei-val { font-size:12px; }
+.ei-val.A { color:#2D6A4F; }
+.ei-val.B { color:#3A6B94; }
+.ei-val.C { color:var(--amber); }
+.ei-val.D { color:var(--red); }
+
+/* Fuel bars */
+.fb { margin-bottom:5px; }
+.fb-head { display:flex; justify-content:space-between; margin-bottom:2px; font-size:8.5px; font-family:'Courier New',monospace; }
+.fb-nm { color:var(--ink-2); }
+.fb-vl { color:var(--ink); }
+.fb-track { height:3px; background:var(--cream-3); border:0.5px solid var(--rule-lt); }
+.fb-fill { height:100%; background:var(--amber); }
+.fb-fill.hi { background:var(--red); }
+
+/* ── TOOLTIP ── */
+#tt {
+  position: absolute;
+  background: var(--cream);
+  border: 0.5px solid var(--ink);
+  padding: 9px 11px;
+  z-index: 200;
+  pointer-events: none;
+  display: none;
+  min-width: 175px;
+  box-shadow: 3px 3px 0 rgba(26,22,16,.08);
+}
+.tt-vessel { font-size:12px; line-height:1.2; margin-bottom:3px; }
+.tt-route { font-size:8.5px; font-family:'Courier New',monospace; letter-spacing:.1em; text-transform:uppercase; color:var(--red); }
+.tt-rule { height:0.5px; background:var(--rule-lt); margin:6px 0; }
+.tt-row { display:flex; justify-content:space-between; margin-bottom:2px; font-size:8.5px; font-family:'Courier New',monospace; }
+.tt-k { color:var(--ink-3); }
+.tt-v { color:var(--ink); }
+
+/* ── CONTROLS ── */
+#ctrl {
+  position: absolute; bottom:14px; left:50%; transform:translateX(-50%);
+  background: var(--panel);
+  border: 0.5px solid var(--rule);
+  padding: 5px 12px;
+  display: flex; align-items: center; gap:4px; z-index:40;
+}
+.ctrl-sep { width:0.5px; height:14px; background:var(--rule-lt); margin:0 4px; }
+.ctrl-lbl { font-size:7.5px; letter-spacing:.15em; text-transform:uppercase; font-family:'Courier New',monospace; color:var(--ink-3); margin-right:2px; }
+.cbtn {
+  font-size:8.5px; letter-spacing:.08em; text-transform:uppercase;
+  font-family:'Courier New',monospace; color:var(--ink-2);
+  padding:2px 7px; border:0.5px solid var(--rule-lt);
+  background:transparent; cursor:pointer; transition:all .15s;
+}
+.cbtn:hover { background:var(--cream-2); }
+.cbtn.on { background:var(--ink); color:var(--cream); border-color:var(--ink); }
+
+/* ── LEGEND ── */
+#lgnd {
+  position:absolute; bottom:52px; right:14px;
+  background:var(--panel); border:0.5px solid var(--rule);
+  padding:8px 10px; z-index:40;
+}
+.lgnd-ttl { font-size:7px; letter-spacing:.18em; text-transform:uppercase; font-family:'Courier New',monospace; color:var(--ink-3); margin-bottom:5px; }
+.lgnd-row { display:flex; align-items:center; gap:5px; margin-bottom:3px; font-size:8.5px; color:var(--ink-2); font-family:'Courier New',monospace; }
+
+/* ── CREDIT LINE ── */
+#credit {
+  position:absolute; bottom:4px; left:14px;
+  font-size:7px; font-family:'Courier New',monospace;
+  letter-spacing:.05em; color:var(--ink-3); z-index:40;
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- MASTHEAD -->
+<div id="header">
+  <div class="hd-topline"></div>
+  <div class="hd-row1">
+    <div class="hd-pub">Shipping Operations Intelligence · Live Fleet Monitor</div>
+    <div class="hd-live">● <span id="clock">--:--:-- UTC</span></div>
+  </div>
+  <h1>Global Fleet &amp; Trade Route Monitor</h1>
+  <div class="hd-deck">Six active corridors · 47 vessels in transit across four ocean basins</div>
+  <div class="hd-metrics">
+    <div class="hd-metric"><span class="hm-val">2.41M</span><span class="hm-lbl">TEU in transit</span></div>
+    <div class="hd-metric"><span class="hm-val r">$847</span><span class="hm-lbl">avg bunker /MT</span></div>
+    <div class="hd-metric"><span class="hm-val">73%</span><span class="hm-lbl">fleet CII-A/B</span></div>
+    <div class="hd-metric"><span class="hm-val a">18.2 kn</span><span class="hm-lbl">avg speed</span></div>
+    <div class="hd-metric"><span class="hm-val">1,847</span><span class="hm-lbl">bookings open</span></div>
+    <div class="hd-metric"><span class="hm-val">12</span><span class="hm-lbl">B/L disputes</span></div>
+  </div>
+  <div class="hd-btmrule"></div>
+</div>
+
+<!-- MAP -->
+<div id="map-wrap">
+  <canvas id="base-canvas"></canvas>
+  <canvas id="anim-canvas"></canvas>
+
+  <!-- LEFT: ERP / OMS -->
+  <div class="panel" id="lp">
+    <div class="ptitle">ERP · Trade Positions</div>
+    <div id="route-list"></div>
+    <div class="ptitle" style="margin-top:12px">OMS · Bookings</div>
+    <div>
+      <div class="ei"><span class="ei-lbl">Confirmed</span><span class="ei-val" style="font-size:11px">1,847</span></div>
+      <div class="ei"><span class="ei-lbl">Pending alloc.</span><span class="ei-val C" style="font-size:11px">234</span></div>
+      <div class="ei"><span class="ei-lbl">B/L issued</span><span class="ei-val" style="font-size:11px">5,621</span></div>
+      <div class="ei"><span class="ei-lbl">Disputes</span><span class="ei-val D" style="font-size:11px">12</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: ENV / FUEL -->
+  <div class="panel" id="rp">
+    <div class="ptitle">Environmental · CII Rating</div>
+    <div id="env-list"></div>
+    <div class="ptitle" style="margin-top:12px">Fuel Optimizer</div>
+    <div id="fuel-list"></div>
+    <div style="margin-top:7px;border-top:0.5px solid var(--rule-lt);padding-top:6px;">
+      <div class="ei"><span class="ei-lbl">Total bunker /day</span><span class="ei-val" style="font-size:10px">$148,240</span></div>
+      <div class="ei"><span class="ei-lbl">VLSFO avg</span><span class="ei-val" style="font-size:10px">$658/MT</span></div>
+      <div class="ei"><span class="ei-lbl">CO₂ equiv /day</span><span class="ei-val" style="font-size:10px">4,821 MT</span></div>
+    </div>
+  </div>
+
+  <!-- TOOLTIP -->
+  <div id="tt">
+    <div class="tt-vessel" id="tt-name">–</div>
+    <div class="tt-route" id="tt-route">–</div>
+    <div class="tt-rule"></div>
+    <div class="tt-row"><span class="tt-k">Flag</span><span class="tt-v" id="tt-flag">–</span></div>
+    <div class="tt-row"><span class="tt-k">Speed</span><span class="tt-v" id="tt-speed">–</span></div>
+    <div class="tt-row"><span class="tt-k">Fuel</span><span class="tt-v" id="tt-fuel">–</span></div>
+    <div class="tt-row"><span class="tt-k">Cargo</span><span class="tt-v" id="tt-cargo">–</span></div>
+    <div class="tt-row"><span class="tt-k">CII</span><span class="tt-v" id="tt-cii">–</span></div>
+    <div class="tt-row"><span class="tt-k">ETA dest.</span><span class="tt-v" id="tt-eta">–</span></div>
+    <div class="tt-row"><span class="tt-k">Cargo</span><span class="tt-v" id="tt-teu">–</span></div>
+  </div>
+
+  <!-- LEGEND -->
+  <div id="lgnd">
+    <div class="lgnd-ttl">Active routes</div>
+    <div id="lgnd-items"></div>
+    <div style="margin-top:5px;border-top:0.5px solid var(--rule-lt);padding-top:4px;">
+      <div class="lgnd-row">
+        <svg width="16" height="9"><polygon points="9,4.5 4,1.5 4,7.5" fill="#C41230"/><line x1="0" y1="4.5" x2="4" y2="4.5" stroke="#C41230" stroke-width="1.5"/></svg>
+        <span>Vessel (hover/click)</span>
+      </div>
+      <div class="lgnd-row">
+        <svg width="16" height="9"><circle cx="8" cy="4.5" r="3.5" fill="none" stroke="#C41230" stroke-width="1"/><circle cx="8" cy="4.5" r="1" fill="#C41230"/></svg>
+        <span>Port</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTROLS -->
+  <div id="ctrl">
+    <span class="ctrl-lbl">Overlay</span>
+    <button class="cbtn on" id="btn-routes" onclick="tog('routes',this)">Routes</button>
+    <button class="cbtn" id="btn-weather" onclick="tog('weather',this)">Weather</button>
+    <button class="cbtn" id="btn-fuel" onclick="tog('fuel',this)">ECA Zones</button>
+    <button class="cbtn" id="btn-env" onclick="tog('env',this)">Emissions</button>
+    <div class="ctrl-sep"></div>
+    <span class="ctrl-lbl">Speed</span>
+    <button class="cbtn" onclick="setSpd(0.5,this)">½×</button>
+    <button class="cbtn on" id="spd1" onclick="setSpd(1,this)">1×</button>
+    <button class="cbtn" onclick="setSpd(5,this)">5×</button>
+  </div>
+
+  <div id="credit">Source: AIS feed · Weather API · Fuel markets  —  For illustration only</div>
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+<script>
+/* ═══════════════════ DATA ═══════════════════ */
+const ROUTES = [
+  {
+    id:'r1', name:'Asia–Europe (Suez)', shortName:'Asia–EU', color:'#C41230',
+    from:'Shanghai', to:'Rotterdam',
+    vessel:'EVER GOLDEN', flag:'Panama', dwt:'220,000 t',
+    cargo:'Electronics / Machinery', teu:'21,413 TEU',
+    speed:'18.4 kn', fuel:'148 MT/day', cii:'A', eta:'02 Apr 2026',
+    initT: 0.38,
+    wp:[[121.5,31.2],[112,24],[103.8,1.3],[90,5],[79.8,6.9],[70,12],
+        [44.9,11.8],[43.6,12.6],[32.5,29.9],[32.3,31.3],[25,35],[14,38],
+        [5,37],[-5.4,36],[-9,38],[-5,44],[0,48],[4.5,51.9]]
+  },
+  {
+    id:'r2', name:'Trans-Pacific', shortName:'Trans-Pac', color:'#C87C18',
+    from:'Yantian', to:'Long Beach',
+    vessel:'MSC AURORA', flag:'Panama', dwt:'198,000 t',
+    cargo:'Consumer goods', teu:'19,224 TEU',
+    speed:'17.8 kn', fuel:'136 MT/day', cii:'B', eta:'28 Mar 2026',
+    initT: 0.62,
+    wp:[[114.5,22.5],[130,27],[148,25],[165,22],[179,20],
+        [-175,19],[-158,18],[-138,22],[-122,31],[-118.2,33.7]]
+  },
+  {
+    id:'r3', name:'Trans-Atlantic', shortName:'Trans-Atl', color:'#3A6B94',
+    from:'Rotterdam', to:'New York',
+    vessel:'MAERSK ELBA', flag:'Denmark', dwt:'141,000 t',
+    cargo:'Chemicals / Autos', teu:'13,102 TEU',
+    speed:'20.1 kn', fuel:'112 MT/day', cii:'A', eta:'20 Mar 2026',
+    initT: 0.55,
+    wp:[[4.5,51.9],[-2,50],[-8,47],[-20,45],[-36,44],[-52,42],[-63,41],[-74,40.7]]
+  },
+  {
+    id:'r4', name:'Middle East–Asia', shortName:'Mid East', color:'#4B8A5A',
+    from:'Jebel Ali', to:'Singapore',
+    vessel:'COSCO HARMONY', flag:'HK SAR', dwt:'176,000 t',
+    cargo:'Oil products / Bulk', teu:'8,200 TEU',
+    speed:'15.2 kn', fuel:'98 MT/day', cii:'C', eta:'22 Mar 2026',
+    initT: 0.28,
+    wp:[[55.1,25.0],[58,20],[62,15],[65,12],[72.8,18.9],[72,13],[78,8],[80,5],[103.8,1.3]]
+  },
+  {
+    id:'r5', name:'S. America–Europe', shortName:'S.Am–EU', color:'#7B5EA7',
+    from:'Santos', to:'Hamburg',
+    vessel:'HAMBURG SÜND', flag:'Germany', dwt:'92,000 t',
+    cargo:'Soy / Agri / Auto parts', teu:'10,600 TEU',
+    speed:'16.5 kn', fuel:'89 MT/day', cii:'A', eta:'08 Apr 2026',
+    initT: 0.18,
+    wp:[[-46.3,-23.9],[-38,-18],[-26,-5],[-18,5],[-12,15],[-8,25],
+        [-5,33],[0,38],[2,44],[5,50],[9.8,53.5]]
+  },
+  {
+    id:'r6', name:'Cape Route (VLCC)', shortName:'Cape VLCC', color:'#B55C2B',
+    from:'Ras Tanura', to:'Rotterdam',
+    vessel:'NORDIC DIANA', flag:'Norway', dwt:'315,000 t',
+    cargo:'Crude oil (VLCC)', teu:'N/A — VLCC',
+    speed:'14.0 kn', fuel:'186 MT/day', cii:'B', eta:'15 Apr 2026',
+    initT: 0.32,
+    wp:[[50.1,26.6],[55,20],[58,12],[60,5],[60,-10],[47,-25],[32,-32],
+        [18.4,-33.9],[10,-28],[5,-15],[-2,5],[-8,20],[-10,32],
+        [-6,36],[0,44],[4.5,51.9]]
+  }
+];
+
+const PORTS = [
+  { name:'Shanghai',   c:[121.5,31.2] },
+  { name:'Rotterdam',  c:[4.5,51.9] },
+  { name:'Long Beach', c:[-118.2,33.7] },
+  { name:'Yantian',    c:[114.5,22.5] },
+  { name:'Singapore',  c:[103.8,1.3] },
+  { name:'Jebel Ali',  c:[55.1,25.0] },
+  { name:'Santos',     c:[-46.3,-23.9] },
+  { name:'Hamburg',    c:[9.8,53.5] },
+  { name:'New York',   c:[-74,40.7] },
+  { name:'Ras Tanura', c:[50.1,26.6] },
+];
+
+const WEATHER = [
+  { name:'N. Atlantic Low', c:[-35,52], r:8,  type:'storm',   s:.72 },
+  { name:'Pacific High',    c:[-140,30],r:12, type:'high',    s:.45 },
+  { name:'Monsoon belt',    c:[75,15],  r:11, type:'monsoon', s:.55 },
+  { name:'Cape Horn low',   c:[-60,-54],r:7,  type:'storm',   s:.80 },
+  { name:'Gulf wind',       c:[58,22],  r:6,  type:'wind',    s:.42 },
+];
+
+const ECA = [
+  { name:'North Sea ECA',    c:[5,56],   r:7 },
+  { name:'Baltic ECA',       c:[18,58],  r:6 },
+  { name:'N.America ECA',    c:[-70,40], r:9 },
+  { name:'Med ECA (prop.)',   c:[15,38],  r:8 },
+];
+
+/* ═══════════════════ STATE ═══════════════════ */
+let proj, W, H, worldData;
+let vprog = {};       // vessel progress 0-1
+let routePts = {};    // projected polyline points per route
+let overlays = { routes:true, weather:false, fuel:false, env:false };
+let selId = null;
+let simSpd = 1;
+let dashOff = 0;
+let lastTs = null;
+
+/* ═══════════════════ INIT ═══════════════════ */
+function init() {
+  tickClock(); setInterval(tickClock, 1000);
+  buildPanels();
+
+  const wrap = document.getElementById('map-wrap');
+  W = wrap.clientWidth; H = wrap.clientHeight;
+
+  const bc = document.getElementById('base-canvas');
+  const ac = document.getElementById('anim-canvas');
+  bc.width = W; bc.height = H;
+  ac.width = W; ac.height = H;
+
+  proj = makeProj();
+
+  fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
+    .then(r => r.json())
+    .then(w => { worldData = w; drawBase(w, bc); startAnim(); })
+    .catch(() => { drawFallback(bc); startAnim(); });
+
+  window.addEventListener('resize', onResize);
+  ac.addEventListener('mousemove', onMove);
+  ac.addEventListener('click', onClick);
+  ac.style.pointerEvents = 'all';
+}
+
+function makeProj() {
+  return d3.geoNaturalEarth1()
+    .scale(W / 6.4)
+    .translate([W * 0.5, H * 0.5]);
+}
+
+function onResize() {
+  const wrap = document.getElementById('map-wrap');
+  W = wrap.clientWidth; H = wrap.clientHeight;
+  const bc = document.getElementById('base-canvas');
+  const ac = document.getElementById('anim-canvas');
+  bc.width = W; bc.height = H;
+  ac.width = W; ac.height = H;
+  proj = makeProj();
+  routePts = {};
+  ROUTES.forEach(r => { routePts[r.id] = calcPts(r); });
+  if (worldData) drawBase(worldData, bc); else drawFallback(bc);
+}
+
+/* ═══════════════════ CLOCK ═══════════════════ */
+function tickClock() {
+  const n = new Date();
+  document.getElementById('clock').textContent =
+    [n.getUTCHours(), n.getUTCMinutes(), n.getUTCSeconds()]
+    .map(x => String(x).padStart(2,'0')).join(':') + ' UTC';
+}
+
+/* ═══════════════════ BASE MAP ═══════════════════ */
+function drawBase(world, canvas) {
+  const ctx = canvas.getContext('2d');
+  const gp = d3.geoPath(proj, ctx);
+
+  // Ocean gradient
+  const og = ctx.createRadialGradient(W*.5,H*.48,0, W*.5,H*.48, Math.max(W,H)*.65);
+  og.addColorStop(0, '#BDD1DC');
+  og.addColorStop(1, '#9AB4C2');
+  ctx.save();
+  ctx.beginPath(); gp({type:'Sphere'});
+  ctx.fillStyle = og; ctx.fill(); ctx.restore();
+
+  // Graticule
+  ctx.save();
+  ctx.beginPath(); gp(d3.geoGraticule()());
+  ctx.strokeStyle = 'rgba(155,175,190,0.30)';
+  ctx.lineWidth = 0.5; ctx.stroke(); ctx.restore();
+
+  // Sphere border
+  ctx.save();
+  ctx.beginPath(); gp({type:'Sphere'});
+  ctx.strokeStyle='rgba(130,155,170,0.4)';
+  ctx.lineWidth=1; ctx.stroke(); ctx.restore();
+
+  // Land fill
+  const countries = topojson.feature(world, world.objects.countries);
+  ctx.save();
+  ctx.beginPath(); gp(countries);
+  ctx.fillStyle = '#CCBB8C'; ctx.fill(); ctx.restore();
+
+  // Crosshatch texture on land
+  ctx.save();
+  ctx.beginPath(); gp(countries); ctx.clip();
+  ctx.strokeStyle = 'rgba(120,95,55,0.07)';
+  ctx.lineWidth = 0.8;
+  for (let i = -H; i < W + H; i += 4) {
+    ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke();
+  }
+  ctx.restore();
+
+  // Internal borders
+  ctx.save();
+  ctx.beginPath(); gp(topojson.mesh(world, world.objects.countries, (a,b) => a!==b));
+  ctx.strokeStyle='rgba(160,135,85,0.50)'; ctx.lineWidth=0.5; ctx.stroke(); ctx.restore();
+
+  // Coastlines
+  ctx.save();
+  ctx.beginPath(); gp(topojson.mesh(world, world.objects.countries, (a,b) => a===b));
+  ctx.strokeStyle='rgba(150,125,78,0.70)'; ctx.lineWidth=0.9; ctx.stroke(); ctx.restore();
+}
+
+function drawFallback(canvas) {
+  const ctx = canvas.getContext('2d');
+  const og = ctx.createLinearGradient(0,0,W,H);
+  og.addColorStop(0,'#B6CAD8'); og.addColorStop(1,'#9AB4C2');
+  ctx.fillStyle=og; ctx.fillRect(0,0,W,H);
+}
+
+/* ═══════════════════ ROUTE POINTS ═══════════════════ */
+function calcPts(route) {
+  const pts = [];
+  for (let i = 0; i < route.wp.length-1; i++) {
+    const interp = d3.geoInterpolate(route.wp[i], route.wp[i+1]);
+    const steps = 16;
+    for (let s = 0; s < steps; s++) {
+      const p = proj(interp(s/steps));
+      if (p) pts.push(p);
+    }
+  }
+  const last = proj(route.wp[route.wp.length-1]);
+  if (last) pts.push(last);
+  return pts;
+}
+
+function ptAtT(pts, t) {
+  if (!pts || pts.length < 2) return null;
+  const idx = t * (pts.length-1);
+  const i = Math.floor(idx), f = idx-i;
+  if (i >= pts.length-1) return pts[pts.length-1];
+  const a=pts[i], b=pts[i+1];
+  return [a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f];
+}
+
+function headAtT(pts, t) {
+  const e = 0.008;
+  const p1 = ptAtT(pts, Math.max(0,t-e));
+  const p2 = ptAtT(pts, Math.min(1,t+e));
+  if (!p1||!p2) return 0;
+  return Math.atan2(p2[1]-p1[1], p2[0]-p1[0]);
+}
+
+/* ═══════════════════ ANIMATION ═══════════════════ */
+function startAnim() {
+  ROUTES.forEach(r => {
+    routePts[r.id] = calcPts(r);
+    vprog[r.id] = r.initT;
+  });
+  requestAnimationFrame(frame);
+}
+
+function frame(ts) {
+  if (!lastTs) lastTs = ts;
+  const dt = Math.min((ts-lastTs)/1000, 0.1) * simSpd;
+  lastTs = ts;
+  dashOff += dt * 30;
+  ROUTES.forEach(r => { vprog[r.id] = (vprog[r.id] + dt * 0.007) % 1; });
+  drawAnim();
+  requestAnimationFrame(frame);
+}
+
+function drawAnim() {
+  const ac = document.getElementById('anim-canvas');
+  const ctx = ac.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  if (overlays.weather) drawWeather(ctx);
+  if (overlays.fuel)    drawECA(ctx);
+  if (overlays.routes)  drawRoutes(ctx);
+  drawPorts(ctx);
+  drawVessels(ctx);
+  if (overlays.env)     drawEnv(ctx);
+}
+
+/* ═══════════════════ DRAW: ROUTES ═══════════════════ */
+function drawRoutes(ctx) {
+  ROUTES.forEach(r => {
+    const pts = routePts[r.id];
+    if (!pts || pts.length < 2) return;
+    const t = vprog[r.id];
+    const isSel = selId === r.id;
+
+    // Ghost trail
+    ctx.save();
+    ctx.beginPath();
+    pts.forEach((p,i) => i===0 ? ctx.moveTo(p[0],p[1]) : ctx.lineTo(p[0],p[1]));
+    ctx.strokeStyle = r.color + '1C';
+    ctx.lineWidth = 4; ctx.stroke(); ctx.restore();
+
+    // Planned route (dashed)
+    ctx.save();
+    ctx.setLineDash([5,5]);
+    ctx.lineDashOffset = -dashOff;
+    ctx.beginPath();
+    pts.forEach((p,i) => i===0 ? ctx.moveTo(p[0],p[1]) : ctx.lineTo(p[0],p[1]));
+    ctx.strokeStyle = r.color + (isSel ? 'CC':'70');
+    ctx.lineWidth = isSel ? 1.6 : 1.0; ctx.stroke(); ctx.restore();
+
+    // Traveled portion (solid)
+    const endI = Math.floor(t * (pts.length-1));
+    if (endI > 0) {
+      ctx.save();
+      ctx.beginPath();
+      for (let i=0; i<=endI; i++) i===0 ? ctx.moveTo(pts[i][0],pts[i][1]) : ctx.lineTo(pts[i][0],pts[i][1]);
+      ctx.strokeStyle = r.color;
+      ctx.lineWidth = isSel ? 2.4 : 1.6; ctx.stroke(); ctx.restore();
+    }
+
+    // Route label near 50% mark (only if selected or enough space)
+    if (isSel) {
+      const mp = ptAtT(pts, 0.5);
+      if (mp) {
+        ctx.save();
+        ctx.font = '9px Courier New';
+        const tw = ctx.measureText(r.name).width;
+        ctx.fillStyle = 'rgba(243,237,224,0.85)';
+        ctx.fillRect(mp[0]-tw/2-4, mp[1]-14, tw+8, 16);
+        ctx.fillStyle = r.color;
+        ctx.textAlign = 'center';
+        ctx.fillText(r.name, mp[0], mp[1]-3);
+        ctx.restore();
+      }
+    }
+  });
+}
+
+/* ═══════════════════ DRAW: VESSELS ═══════════════════ */
+function drawVessels(ctx) {
+  ROUTES.forEach(r => {
+    const pts = routePts[r.id];
+    if (!pts || pts.length < 2) return;
+    const t = vprog[r.id];
+    const pos = ptAtT(pts, t);
+    if (!pos) return;
+    const ang = headAtT(pts, t);
+    const isSel = selId === r.id;
+    const sz = isSel ? 8 : 6;
+
+    // Selection halo
+    if (isSel) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(pos[0], pos[1], 16, 0, Math.PI*2);
+      ctx.fillStyle = r.color + '18'; ctx.fill();
+      ctx.beginPath();
+      ctx.arc(pos[0], pos[1], 12, 0, Math.PI*2);
+      ctx.strokeStyle = r.color + '40';
+      ctx.lineWidth = 1; ctx.stroke(); ctx.restore();
+    }
+
+    // Wake
+    ctx.save();
+    const wt0 = Math.max(0, t-0.035);
+    const wpts = [];
+    for (let wt=wt0; wt<t; wt+=0.003) {
+      const wp = ptAtT(pts, wt);
+      if (wp) wpts.push(wp);
+    }
+    if (wpts.length > 1) {
+      ctx.beginPath();
+      wpts.forEach((wp,i) => i===0 ? ctx.moveTo(wp[0],wp[1]) : ctx.lineTo(wp[0],wp[1]));
+      const wg = ctx.createLinearGradient(wpts[0][0],wpts[0][1],pos[0],pos[1]);
+      wg.addColorStop(0, r.color+'00');
+      wg.addColorStop(1, r.color+'50');
+      ctx.strokeStyle=wg; ctx.lineWidth=2; ctx.stroke();
+    }
+    ctx.restore();
+
+    // Vessel body (arrow/ship silhouette)
+    ctx.save();
+    ctx.translate(pos[0], pos[1]);
+    ctx.rotate(ang);
+    ctx.beginPath();
+    ctx.moveTo(sz*1.8, 0);       // bow
+    ctx.lineTo(sz*0.2, -sz*0.8);  // port bow
+    ctx.lineTo(-sz*0.8, -sz*0.6); // port stern
+    ctx.lineTo(-sz, 0);            // stern
+    ctx.lineTo(-sz*0.8, sz*0.6);  // stbd stern
+    ctx.lineTo(sz*0.2, sz*0.8);   // stbd bow
+    ctx.closePath();
+    ctx.fillStyle = r.color;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(243,237,224,0.9)';
+    ctx.lineWidth = 0.8; ctx.stroke();
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════ DRAW: PORTS ═══════════════════ */
+function drawPorts(ctx) {
+  PORTS.forEach(p => {
+    const px = proj(p.c);
+    if (!px) return;
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(px[0],px[1], 5, 0, Math.PI*2);
+    ctx.fillStyle='rgba(243,237,224,0.88)';
+    ctx.strokeStyle='#C41230'; ctx.lineWidth=1.2;
+    ctx.fill(); ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(px[0],px[1], 1.5, 0, Math.PI*2);
+    ctx.fillStyle='#C41230'; ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.font = 'bold 8.5px Georgia';
+    ctx.letterSpacing = '0.05em';
+    const tw = ctx.measureText(p.name).width;
+    let lx = px[0]+9, ly = px[1]-3;
+    if (lx+tw > W-10) lx = px[0]-tw-9;
+    if (ly < 14) ly = px[1]+14;
+    // small bg
+    ctx.fillStyle='rgba(243,237,224,0.72)';
+    ctx.fillRect(lx-2, ly-9, tw+4, 12);
+    ctx.fillStyle='#1A1610';
+    ctx.fillText(p.name.toUpperCase(), lx, ly);
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════ DRAW: WEATHER ═══════════════════ */
+function drawWeather(ctx) {
+  const cols = {
+    storm:   [120,80,185],
+    high:    [80,160,200],
+    monsoon: [60,145,185],
+    wind:    [200,160,60]
+  };
+  WEATHER.forEach(w => {
+    const cx = proj(w.c); if (!cx) return;
+    const ex = proj([w.c[0]+w.r*.7, w.c[1]]); if (!ex) return;
+    const r = Math.abs(ex[0]-cx[0]);
+    const rgb = cols[w.type]||[150,150,200];
+    ctx.save();
+    const g = ctx.createRadialGradient(cx[0],cx[1],0,cx[0],cx[1],r);
+    g.addColorStop(0, `rgba(${rgb},${w.s*0.26})`);
+    g.addColorStop(1, `rgba(${rgb},0)`);
+    ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx[0],cx[1],r,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='rgba(26,22,16,0.55)';
+    ctx.font='7.5px Courier New'; ctx.textAlign='center';
+    ctx.fillText(w.name, cx[0], cx[1]+3);
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════ DRAW: ECA ═══════════════════ */
+function drawECA(ctx) {
+  ECA.forEach(z => {
+    const cx = proj(z.c); if (!cx) return;
+    const ex = proj([z.c[0]+z.r*.7, z.c[1]]); if (!ex) return;
+    const r = Math.abs(ex[0]-cx[0]);
+    ctx.save();
+    ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.arc(cx[0],cx[1],r,0,Math.PI*2);
+    ctx.strokeStyle='rgba(180,80,30,0.65)'; ctx.lineWidth=1; ctx.stroke();
+    ctx.fillStyle='rgba(180,80,30,0.06)'; ctx.fill();
+    ctx.setLineDash([]);
+    ctx.fillStyle='#B04A1C'; ctx.font='bold 7.5px Courier New';
+    ctx.textAlign='center'; ctx.fillText('ECA', cx[0], cx[1]+3);
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════ DRAW: ENV ═══════════════════ */
+function drawEnv(ctx) {
+  const cols = {A:'#2D6A4F',B:'#3A6B94',C:'#C87C18',D:'#C41230'};
+  ROUTES.forEach(r => {
+    const pts = routePts[r.id]; if (!pts||pts.length<2) return;
+    const pos = ptAtT(pts, vprog[r.id]); if (!pos) return;
+    ctx.save();
+    ctx.fillStyle='rgba(243,237,224,0.82)';
+    ctx.fillRect(pos[0]+10, pos[1]+8, 36, 14);
+    ctx.fillStyle=cols[r.cii]||'#666';
+    ctx.font='bold 9px Courier New';
+    ctx.fillText(`CII-${r.cii}`, pos[0]+12, pos[1]+19);
+    ctx.restore();
+  });
+}
+
+/* ═══════════════════ MOUSE ═══════════════════ */
+function onMove(e) {
+  const rect = e.target.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  const ac = document.getElementById('anim-canvas');
+  let hit = null;
+  ROUTES.forEach(r => {
+    const pts=routePts[r.id]; if(!pts) return;
+    const p=ptAtT(pts, vprog[r.id]); if(!p) return;
+    const dx=p[0]-mx, dy=p[1]-my;
+    if (dx*dx+dy*dy < 196) hit=r;
+  });
+  ac.style.cursor = hit?'pointer':'default';
+  if (hit) showTT(hit, e.clientX, e.clientY);
+  else hideTT();
+}
+
+function onClick(e) {
+  const rect=e.target.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let hit=null;
+  ROUTES.forEach(r=>{
+    const pts=routePts[r.id]; if(!pts) return;
+    const p=ptAtT(pts, vprog[r.id]); if(!p) return;
+    const dx=p[0]-mx, dy=p[1]-my;
+    if(dx*dx+dy*dy<196) hit=r;
+  });
+  selId = hit ? hit.id : null;
+}
+
+function showTT(r, cx, cy) {
+  const tt=document.getElementById('tt');
+  document.getElementById('tt-name').textContent=r.vessel;
+  document.getElementById('tt-route').textContent=r.name;
+  document.getElementById('tt-flag').textContent=r.flag;
+  document.getElementById('tt-speed').textContent=r.speed;
+  document.getElementById('tt-fuel').textContent=r.fuel;
+  document.getElementById('tt-cargo').textContent=r.cargo;
+  document.getElementById('tt-cii').textContent='CII-'+r.cii;
+  document.getElementById('tt-eta').textContent=r.eta;
+  document.getElementById('tt-teu').textContent=r.teu;
+  tt.style.display='block';
+  const ar=document.getElementById('app').getBoundingClientRect();
+  let tx=cx-ar.left+16, ty=cy-ar.top+16;
+  const tw=tt.offsetWidth||185, th=tt.offsetHeight||170;
+  if(tx+tw>ar.width-10) tx=cx-ar.left-tw-8;
+  if(ty+th>ar.height-10) ty=cy-ar.top-th-8;
+  tt.style.left=tx+'px'; tt.style.top=ty+'px';
+}
+function hideTT() { document.getElementById('tt').style.display='none'; }
+
+/* ═══════════════════ CONTROLS ═══════════════════ */
+function tog(name, btn) {
+  overlays[name] = !overlays[name];
+  btn.classList.toggle('on', overlays[name]);
+}
+function setSpd(s, btn) {
+  simSpd=s;
+  document.querySelectorAll('.cbtn').forEach(b=>{
+    if(['½×','1×','5×'].includes(b.textContent)) b.classList.remove('on');
+  });
+  btn.classList.add('on');
+}
+
+/* ═══════════════════ BUILD PANELS ═══════════════════ */
+function buildPanels() {
+  // Left panel: route list
+  const rl=document.getElementById('route-list');
+  ROUTES.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='ri';
+    d.innerHTML=`<div class="ri-dot" style="background:${r.color}"></div>
+      <div class="ri-body">
+        <div class="ri-name">${r.name}</div>
+        <div class="ri-sub">${r.from} → ${r.to}</div>
+      </div>`;
+    d.onclick=()=>{ selId=(selId===r.id?null:r.id); };
+    rl.appendChild(d);
+  });
+
+  // Right: env CII
+  const el=document.getElementById('env-list');
+  ROUTES.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='ei';
+    const abbr=r.vessel.split(' ').slice(0,2).join(' ');
+    d.innerHTML=`<span class="ei-lbl">${abbr}</span><span class="ei-val ${r.cii}">CII-${r.cii}</span>`;
+    el.appendChild(d);
+  });
+
+  // Right: fuel bars
+  const fl=document.getElementById('fuel-list');
+  const maxF=200;
+  ROUTES.forEach(r=>{
+    const fv=parseFloat(r.fuel);
+    const pct=Math.min(100,(fv/maxF)*100).toFixed(0);
+    const nm=r.vessel.split(' ').pop();
+    const d=document.createElement('div');
+    d.className='fb';
+    d.innerHTML=`<div class="fb-head"><span class="fb-nm">${nm}</span><span class="fb-vl">${fv}t/d</span></div>
+      <div class="fb-track"><div class="fb-fill${fv>150?' hi':''}" style="width:${pct}%"></div></div>`;
+    fl.appendChild(d);
+  });
+
+  // Legend
+  const li=document.getElementById('lgnd-items');
+  ROUTES.forEach(r=>{
+    const d=document.createElement('div');
+    d.className='lgnd-row';
+    d.innerHTML=`<svg width="18" height="7"><line x1="0" y1="3.5" x2="18" y2="3.5" stroke="${r.color}" stroke-width="2"/></svg><span>${r.shortName}</span>`;
+    li.appendChild(d);
+  });
+}
+
+/* ═══════════════════ GO ═══════════════════ */
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
