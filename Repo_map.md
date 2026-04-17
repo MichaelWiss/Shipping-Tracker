@@ -30,16 +30,41 @@ A living index of what lives where. Update when folders/files are added or moved
 | `public/` | Static assets |
 | `References/` | Design references (e.g., `shipping-map.html`) |
 
+## Library (`lib/`)
+
+| Path | Cell | Purpose |
+|------|------|---------|
+| `lib/supabase.ts` | 1.4 | `supabaseBrowser()` + `supabaseServer()` factories |
+| `lib/types.ts` | 1.5 | 9 shared domain interfaces |
+| `lib/constants.ts` | 1.9 | Corridors, CII thresholds, vessel status colors |
+| `lib/cii.ts` | 1.14 | CII attained calculator (pure function) |
+
+## Seed data (`lib/seed/`)
+
+| Path | Cell | Purpose |
+|------|------|---------|
+| `lib/seed/vessels.ts` | 1.10 | 12 seed vessels (4 container, 4 tanker, 4 bulk) |
+| `lib/seed/ports.ts` | 1.10 | 10 seed ports matching CORRIDORS UN/LOCODEs |
+| `lib/seed/eca-zones.ts` | 1.11 | 4 ECA zone polygons (Baltic, North Sea, N.America, Caribbean) |
+| `lib/seed/voyages.ts` | 1.12 | Voyage assignments + corridor helpers |
+| `lib/seed/positions.ts` | 1.12 | Position generator (linear interpolation along route) |
+| `lib/seed/routes.ts` | 1.12 | Route GeoJSON generator (LineString traveled/planned) |
+| `lib/seed/fuel-prices.ts` | 1.13 | 30 days VLSFO + HSFO price generator |
+| `lib/seed/weather.ts` | 1.13 | 25-point weather grid generator |
+| `lib/seed/index.ts` | 1.10 | Seed runner — clears and re-inserts all data |
+
+## Supabase migrations (`supabase/migrations/`)
+
+| Path | Cell | Purpose |
+|------|------|---------|
+| `supabase/migrations/001_schema.sql` | 1.6 | 9 tables, PostGIS geom, indexes, triggers |
+| `supabase/migrations/002_rls.sql` | 1.7 | RLS enabled, anon SELECT policies |
+| `supabase/migrations/003_realtime.sql` | 1.8 | Realtime publication for 3 tables |
+
 ## Planned (not yet created)
 
 | Path | Added in cell |
 |------|---------------|
-| `lib/supabase.ts` | 1.4 — browser + server Supabase clients |
-| `lib/types.ts` | 1.5 — shared domain interfaces |
-| `lib/constants.ts` | 1.9 — corridors, CII thresholds, colors |
-| `lib/cii.ts` | 1.14 — CII calculator |
-| `lib/seed/` | 1.10–1.13 — seed scripts |
-| `supabase/migrations/` | 1.6–1.8 — SQL migrations |
 | `components/ui/` | 2.2, 2.5 — Sidebar, Card, Badge, Spinner |
 | `components/map/` | 3.x — FleetMap, VesselMarker, RouteLayer, ECALayer, WeatherLayer |
 | `components/dashboard/` | 5.x — KPIBar, CIITable, FuelTicker, AlertsFeed, CorridorChart |
