@@ -19,12 +19,12 @@ export interface Corridor {
 }
 
 export const CORRIDORS: Corridor[] = [
-  { name: "Asia–Europe via Suez",   color: "#2563eb", ports: ["CNSHA", "NLRTM"] },
-  { name: "Transpacific",           color: "#7c3aed", ports: ["CNSHA", "USLAX"] },
-  { name: "Asia–Middle East",       color: "#0891b2", ports: ["SGSIN", "AEJEA"] },
-  { name: "Europe–Americas",        color: "#059669", ports: ["DEHAM", "USLAX"] },
-  { name: "Intra-Asia",             color: "#d97706", ports: ["KRPUS", "SGSIN"] },
-  { name: "Africa–Europe",          color: "#dc2626", ports: ["GRPIR", "NLRTM"] },
+  { name: "Asia–Europe (Suez)",     color: "#C41230", ports: ["CNSHA", "NLRTM"] },
+  { name: "Trans-Pacific",          color: "#C87C18", ports: ["CNSHA", "USLAX"] },
+  { name: "Trans-Atlantic",         color: "#3A6B94", ports: ["DEHAM", "USLAX"] },
+  { name: "Middle East–Asia",       color: "#4B8A5A", ports: ["SGSIN", "AEJEA"] },
+  { name: "S. America–Europe",      color: "#7B5EA7", ports: ["KRPUS", "SGSIN"] },
+  { name: "Cape Route (VLCC)",      color: "#B55C2B", ports: ["GRPIR", "NLRTM"] },
 ];
 
 // -- CII thresholds ---------------------------------------------------------

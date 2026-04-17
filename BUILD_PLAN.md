@@ -62,7 +62,7 @@ CRON_SECRET=
 
 **Verify:** `.env.example` exists in repo. `.env.local` is in `.gitignore`. App still builds.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -76,7 +76,7 @@ CRON_SECRET=
 
 **Verify:** In the Supabase SQL Editor, run `SELECT PostGIS_Version();` — returns a version string. `.env.local` has three real Supabase values.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -91,7 +91,7 @@ CRON_SECRET=
 
 **Verify:** In a temporary test page or `app/page.tsx`, call `supabaseBrowser()` and log the result of `supabase.from('_dummy').select()` — should return an error about table not existing (proves connection works). Remove test code after.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -112,7 +112,7 @@ CRON_SECRET=
 
 **Verify:** `npm run build` completes. No TypeScript errors. Types are importable from any file via `import { Vessel } from '@/lib/types'`.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -136,7 +136,7 @@ CRON_SECRET=
 
 **Verify:** In Supabase Table Editor, all 9 tables visible. Run `SELECT * FROM vessels;` — returns empty result (no rows, but table exists). Run `SELECT * FROM geometry_columns;` — shows `vessel_positions.geom` and `eca_zones.boundary`.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -151,7 +151,7 @@ CRON_SECRET=
 
 **Verify:** Using the anon key, `supabase.from('vessels').select()` returns empty array (not an auth error). Using the anon key, `supabase.from('vessels').insert({...})` returns a permission error. Using the service role key, insert succeeds.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -164,7 +164,7 @@ CRON_SECRET=
 
 **Verify:** In the Supabase dashboard, under Database → Replication, confirm the three tables are listed under `supabase_realtime`. Insert a test row into `vessel_positions` via SQL editor while a browser console is subscribed to the channel — the console logs the new row.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -181,7 +181,7 @@ CRON_SECRET=
 
 **Verify:** `npm run build` compiles. Constants importable from any file.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -196,7 +196,7 @@ CRON_SECRET=
 
 **Verify:** Run `npm run seed`. Query Supabase: `SELECT count(*) FROM vessels;` → 12. `SELECT count(*) FROM ports;` → 10. Each vessel has a valid IMO number. Each port has real lat/lng coordinates.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -213,7 +213,7 @@ CRON_SECRET=
 
 **Verify:** Run seed. `SELECT count(*) FROM eca_zones;` → 4. `SELECT name, ST_AsText(boundary) FROM eca_zones;` returns valid polygon WKT for each zone.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -228,7 +228,7 @@ CRON_SECRET=
 
 **Verify:** `SELECT count(*) FROM voyages;` → 12. `SELECT count(*) FROM vessel_positions;` → ~8,640. `SELECT count(*) FROM vessel_routes;` → 12. Positions for vessel #1 trace a path from origin to current position.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -242,7 +242,7 @@ CRON_SECRET=
 
 **Verify:** `SELECT count(*) FROM fuel_prices;` → 60. `SELECT count(*) FROM weather_grid;` → ~25. Fuel prices show a realistic daily range ($550–650/MT for VLSFO).
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -256,7 +256,7 @@ CRON_SECRET=
 
 **Verify:** Manual test: `calcCII({ fuelConsumedMT: 500, distanceNM: 5000, capacityDWT: 80000 })` → `attained ≈ 0.004008` → rating `'A'`. Adjust inputs to verify B, C, D, E thresholds each return correctly.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -276,13 +276,34 @@ CRON_SECRET=
 - [ ] All TypeScript types compile without errors
 - [ ] PostGIS spatial queries work: `SELECT v.name FROM vessels v JOIN vessel_positions vp ON v.id = vp.vessel_id WHERE ST_DWithin(vp.geom, (SELECT boundary FROM eca_zones WHERE name='North Sea ECA'), 0) LIMIT 1;`
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
 ## Phase 2 — App Shell & Navigation
 
 The app gets its layout, navigation sidebar, and page stubs. No data display yet — just the routing skeleton and visual frame.
+
+---
+
+### Cell 2.0 — Static Design Demo (HTML Prototype)
+**What:** Build a standalone HTML/CSS/JS prototype that locks in the editorial visual language before any Tailwind tokens are wired into the app. The demo lives in `References/` and doubles as a design reference for Cell 2.1.
+**Inputs:** Phase 1 complete
+**Outputs:**
+- `References/design-demo.html` — single-file page, no build step, opens in any browser. Contains:
+  - Masthead strip with dateline (WSJ-style rule + small caps)
+  - Editorial hero with serif headline, kicker, deck, and accent-italic treatment
+  - Numbered section spine (`01/`, `02/`, `03/`) borrowed from DHQ portfolio
+  - Two-column editorial intro with drop-cap and inline SVG illustration (container ship + compass rose, hand-drawn feel, no external assets)
+  - Four-up stat grid (TEU, speed, bunker cost, alerts) with editorial rules
+  - Pullquote block with oxblood quotation marks
+  - Fleet table with CII rating badges (A–E)
+- Palette explicitly **not** cream: cool paper white `#f4f1ec` + ink black `#111418` + oxblood accent `#8b2e2a` + steel-blue ocean `#1b3a55`
+- Typography: Playfair/Georgia serif for headlines and body editorial, system sans for UI chrome, JetBrains Mono for tabular data
+
+**Verify:** `References/shipping-map.html` serves as the approved design prototype. Its visual language (cream `#F3EDE0`, ink `#1A1610`, red `#C41230`, Georgia serif, Courier New monospace, 0.5px rules, translucent panels) is the source of truth for Cell 2.1.
+
+**Status:** `[x]`
 
 ---
 
@@ -297,7 +318,7 @@ The app gets its layout, navigation sidebar, and page stubs. No data display yet
 
 **Verify:** App renders with cream background, Georgia heading font. No Tailwind purge warnings.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -313,7 +334,7 @@ The app gets its layout, navigation sidebar, and page stubs. No data display yet
 
 **Verify:** Sidebar renders on all pages. Clicking each link navigates to the correct route (pages can be blank stubs). Active link is visually distinct. Sidebar collapses on < 768px width.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -327,7 +348,7 @@ The app gets its layout, navigation sidebar, and page stubs. No data display yet
 
 **Verify:** Every route shows the sidebar. Content area is scrollable independently. Layout doesn't break at any viewport width.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -345,7 +366,7 @@ The app gets its layout, navigation sidebar, and page stubs. No data display yet
 
 **Verify:** Navigate to each route via sidebar. Each page shows its heading. No 404s. No layout shift.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -359,7 +380,7 @@ The app gets its layout, navigation sidebar, and page stubs. No data display yet
 
 **Verify:** Import and render each component in a stub page. Card shows border + title. Badge shows colored text. Spinner animates. All match the design token palette.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -376,7 +397,7 @@ The app gets its layout, navigation sidebar, and page stubs. No data display yet
 - [ ] `npm run build` → zero errors
 - [ ] UI components (Card, Badge, Spinner) render correctly
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -396,7 +417,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** A minimal `<MapContainer>` renders on `/map` with default OpenStreetMap tiles. No SSR hydration errors.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -412,7 +433,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** Map shows nautical features (depth contours, buoy symbols) when zoomed into a port area like Rotterdam or Singapore.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -430,7 +451,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** 12 vessel markers visible on the map at their seed positions. Markers point in the correct heading direction. Hover shows name + speed.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -446,7 +467,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** 12 route lines visible, each connecting origin port to destination via waypoints. Solid/dashed split is visually distinct. Colors differ by corridor.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -462,7 +483,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** 4 ECA zones render as shaded areas. balticsea, North Sea, NA coast, and Caribbean are visually correct geographic shapes.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -477,7 +498,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** 10 port markers visible at appropriate zoom. Labels don't overlap vessel markers. Hover shows port info.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -498,7 +519,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** Click vessel on map → panel slides in with correct data from Supabase. Click different vessel → panel updates. Click empty map → panel closes. Panel doesn't overlap map controls.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -512,7 +533,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** Each toggle shows/hides its layer. Defaults are correct. Toggling doesn't cause map re-render flicker.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -527,7 +548,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 
 **Verify:** Map fills available space. Resizing browser window → map resizes. No scroll bars. Panel slides over map, not beside it.
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 
@@ -548,7 +569,7 @@ The map renders with seed data. No live feeds, no Realtime subscriptions yet. Th
 - [ ] `npm run build` → zero errors
 - [ ] No hydration errors (Leaflet dynamic import)
 
-**Status:** `[ ]`
+**Status:** `[x]`
 
 ---
 

@@ -1,22 +1,238 @@
 @import "tailwindcss";
 
-:root {
-  --background: #faf8f5;
-  --foreground: #1a1a1a;
-}
+/* ─── Design tokens: sourced from References/shipping-map.html ─── */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Core palette */
+  --color-cream:    #F3EDE0;
+  --color-cream-2:  #EDE4D2;
+  --color-cream-3:  #E4D9C4;
+  --color-ocean:    #B6CAD8;
+  --color-ocean-2:  #A2BAC8;
+  --color-land:     #CCBA8E;
+  --color-land-2:   #BEA87A;
+  --color-land-bd:  #A89260;
+  --color-red:      #C41230;
+  --color-amber:    #C87C18;
+  --color-ink:      #1A1610;
+  --color-ink-2:    #4A4030;
+  --color-ink-3:    #7A6E5E;
+  --color-rule:     #C0A880;
+  --color-rule-lt:  #D8C8A4;
+  --color-panel:    rgba(243, 237, 224, 0.96);
+
+  /* CII rating colours */
+  --color-cii-a:    #2D6A4F;
+  --color-cii-b:    #3A6B94;
+  --color-cii-c:    #C87C18;
+  --color-cii-d:    #C41230;
+  --color-cii-e:    #8B1A1A;
+
+  /* Semantic aliases */
+  --color-background: #F3EDE0;
+  --color-foreground: #1A1610;
+
+  /* Typography */
+  --font-serif:  Georgia, "Times New Roman", serif;
+  --font-mono:   "Courier New", monospace;
+  --font-sans:   system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-body {
-  background-color: var(--background);
-  color: var(--foreground);
-}
+/* ─── Base styles ─── */
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-serif);
+  -webkit-font-smoothing: antialiased;
 }
+
+/* Editorial rules — the 0.5px hairlines used everywhere in the prototype */
+.rule       { height: 0.5px; background: var(--color-rule-lt); }
+.rule-heavy { height: 1px;   background: var(--color-rule); }
+.rule-ink   { height: 2px;   background: var(--color-ink); }
+
+/* Panel glass — translucent cream used for overlays and cards */
+.panel-glass {
+  background: var(--color-panel);
+  border: 0.5px solid var(--color-rule);
+}
+
+/* Data label — Courier New uppercase micro-text used for all data labels */
+.data-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* Section title — red Courier New panel headers */
+.section-title {
+  font-family: var(--font-mono);
+  font-size: 7.5px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--color-red);
+  border-bottom: 0.5px solid var(--color-rule-lt);
+  padding-bottom: 5px;
+  margin-bottom: 7px;
+}
+
+/* ─── Masthead ─── */
+.hd-topline   { height: 2px; background: var(--color-ink); margin-bottom: 5px; }
+.hd-btmrule   { height: 1px; background: var(--color-rule-lt); margin-top: 5px; }
+.hd-pub {
+  font-size: 8.5px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+}
+.hd-live {
+  font-size: 8.5px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.12em;
+  color: var(--color-red);
+}
+.hd-live span { animation: blink 1.8s step-end infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.hd-deck {
+  font-size: 10.5px;
+  color: var(--color-ink-2);
+  font-style: italic;
+  margin-bottom: 6px;
+}
+.hm-val       { font-size: 16px; line-height: 1; color: var(--color-ink); }
+.hm-val.r     { color: var(--color-red); }
+.hm-val.a     { color: var(--color-amber); }
+.hm-lbl {
+  font-size: 8px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+  margin-top: 1px;
+}
+
+/* ─── Map overlay panels ─── */
+.map-panel {
+  position: absolute;
+  background: var(--color-panel);
+  border: 0.5px solid var(--color-rule);
+  padding: 11px 13px;
+  z-index: 40;
+  min-width: 186px;
+  max-width: 196px;
+  will-change: transform;
+}
+.ptitle {
+  font-size: 7.5px;
+  letter-spacing: 0.20em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+  color: var(--color-red);
+  border-bottom: 0.5px solid var(--color-rule-lt);
+  padding-bottom: 5px;
+  margin-bottom: 7px;
+}
+
+/* Route items */
+.ri {
+  display: flex; align-items: flex-start; gap: 7px;
+  margin-bottom: 7px; cursor: pointer; padding: 2px 0;
+  border-bottom: 0.5px solid var(--color-rule-lt);
+}
+.ri:last-child { border-bottom: none; margin-bottom: 0; }
+.ri-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.ri-body { flex: 1; }
+.ri-name { font-size: 10px; line-height: 1.2; color: var(--color-ink); }
+.ri-sub {
+  font-size: 8.5px; font-family: var(--font-mono);
+  color: var(--color-ink-3); margin-top: 1px;
+}
+.ri:hover .ri-name { color: var(--color-red); }
+
+/* Env items */
+.ei {
+  display: flex; justify-content: space-between;
+  align-items: baseline; padding: 3px 0;
+  border-bottom: 0.5px solid var(--color-cream-2);
+}
+.ei:last-child { border-bottom: none; }
+.ei-lbl { font-size: 8.5px; font-family: var(--font-mono); color: var(--color-ink-3); }
+.ei-val { font-size: 12px; }
+.ei-val.A { color: #2D6A4F; }
+.ei-val.B { color: #3A6B94; }
+.ei-val.C { color: var(--color-amber); }
+.ei-val.D { color: var(--color-red); }
+
+/* Fuel bars */
+.fb { margin-bottom: 5px; }
+.fb-head { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 8.5px; font-family: var(--font-mono); }
+.fb-nm { color: var(--color-ink-2); }
+.fb-vl { color: var(--color-ink); }
+.fb-track { height: 3px; background: var(--color-cream-3); border: 0.5px solid var(--color-rule-lt); }
+.fb-fill { height: 100%; background: var(--color-amber); }
+.fb-fill.hi { background: var(--color-red); }
+
+/* ─── Map tooltip ─── */
+.vessel-tooltip {
+  background: var(--color-cream);
+  border: 0.5px solid var(--color-ink);
+  padding: 9px 11px;
+  min-width: 175px;
+  box-shadow: 3px 3px 0 rgba(26,22,16,.08);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  color: var(--color-ink);
+}
+.tt-vessel { font-size: 12px; font-family: var(--font-serif); line-height: 1.2; margin-bottom: 3px; color: var(--color-ink); }
+.tt-route  { font-size: 8.5px; font-family: var(--font-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-red); }
+.tt-rule   { height: 0.5px; background: var(--color-rule-lt); margin: 6px 0; }
+.tt-row    { display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 8.5px; font-family: var(--font-mono); }
+.tt-k      { color: var(--color-ink-3); }
+.tt-v      { color: var(--color-ink); }
+
+/* ─── Control bar (bottom-center) ─── */
+.ctrl-bar {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: var(--color-panel);
+  border: 0.5px solid var(--color-rule);
+  padding: 5px 12px;
+  display: flex; align-items: center; gap: 4px; z-index: 40;
+  will-change: transform;
+}
+.ctrl-sep  { width: 0.5px; height: 14px; background: var(--color-rule-lt); margin: 0 4px; }
+.ctrl-lbl  {
+  font-size: 7.5px; letter-spacing: 0.15em; text-transform: uppercase;
+  font-family: var(--font-mono); color: var(--color-ink-3); margin-right: 2px;
+}
+.cbtn {
+  font-size: 8.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  font-family: var(--font-mono); color: var(--color-ink-2);
+  padding: 2px 7px; border: 0.5px solid var(--color-rule-lt);
+  background: transparent; cursor: pointer; transition: all .15s;
+}
+.cbtn:hover { background: var(--color-cream-2); }
+.cbtn.on   { background: var(--color-ink); color: var(--color-cream); border-color: var(--color-ink); }
+
+/* ─── Legend (bottom-right) ─── */
+.lgnd {
+  position: absolute; bottom: 52px; right: 14px;
+  background: var(--color-panel); border: 0.5px solid var(--color-rule);
+  padding: 8px 10px; z-index: 40;
+  will-change: transform;
+}
+.lgnd-ttl  { font-size: 7px; letter-spacing: 0.18em; text-transform: uppercase; font-family: var(--font-mono); color: var(--color-ink-3); margin-bottom: 5px; }
+.lgnd-row  { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; font-size: 8.5px; color: var(--color-ink-2); font-family: var(--font-mono); }
+
+/* ─── Credit line ─── */
+.credit-line {
+  position: absolute; bottom: 4px; left: 14px;
+  font-size: 7px; font-family: var(--font-mono);
+  letter-spacing: 0.05em; color: var(--color-ink-3); z-index: 40;
+  will-change: transform;
+}
+
+
